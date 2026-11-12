@@ -1,0 +1,23 @@
+{
+ "props": "work_final/props.json",
+ "cues": [
+  {
+   "sound": "whoosh",
+   "at": "cards.0.from",
+   "offset": -0.1
+  },
+  {
+   "sound": "pop",
+   "at": "cards.1.from"
+  },
+  {
+   "sound": "riser",
+   "at": "flashes.0.at"
+  },
+  {
+   "sound": "audio/click.wav",
+   "at": 12.4,
+   "db": -3
+  }
+ ]
+}

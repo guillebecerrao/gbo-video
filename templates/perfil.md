@@ -24,7 +24,7 @@
 
 ## Carpetas
 - **Raíz de proyectos de video:** (ej. `~/Videos/<marca>/`)
-- **Remotion (copia de trabajo de la plantilla):** (por defecto `~/Developer/gbo-remotion`)
+- **Remotion (copia de trabajo de la plantilla):** (por defecto `remotion/` dentro de este perfil; o variable `GBO_REMOTION_DIR`)
 - **video-use:** (por defecto `~/Developer/video-use`; o variable `VIDEO_USE_DIR`)
 
 ## Marca

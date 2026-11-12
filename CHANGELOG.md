@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 — 2026-11-12
+- Music montage reels: new `scripts/reel_render.py` (beat-length segments snapped to the music grid, speed and
+  timelapse, ambient/mute audio, muffled intro until the drop, music stop, natural outro, ducking, captions aligned
+  by energy, Frameback sidecar) rendered with the new `GboMontage` composition, or `--captions ass` without Remotion
+- New `scripts/sfx_track.py`: SFX track from a cue list anchored to Remotion props ("end.clickAt"), synthesized
+  sounds or any audio file
+- Neutral examples: `templates/edl.reel.ejemplo.json`, `templates/sfx.ejemplo.json`
+- The creator's Remotion working copy now defaults to `<profile>/remotion` (style rules and components travel together)
+
 ## 0.2.0 — 2026-11-12
 Learnings from four more edits (event recap, a shop promo, a product-launch reel, a montage reel), consolidated.
 

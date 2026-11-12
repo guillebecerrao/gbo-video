@@ -1,0 +1,132 @@
+{
+ "fps": 30,
+ "sources": "../raw/{name}.mov",
+ "proxies": "proxies/{name}.mp4",
+ "color_chain": "",
+ "grade": "eq=contrast=1.04:saturation=1.06",
+ "music": {
+  "file": "audio/track.wav",
+  "label": "Track name",
+  "bpm": 120,
+  "phase": 0.0,
+  "music_db": -12,
+  "drop_at_segment": 1,
+  "muffled_lowpass_hz": 650,
+  "end_fade": 1.2
+ },
+ "emphasis": [
+  "product"
+ ],
+ "cta_word": "building",
+ "segments": [
+  {
+   "label": "hook",
+   "src": "C001",
+   "in": 0.4,
+   "out": 3.6,
+   "audio": "voice",
+   "captions": true
+  },
+  {
+   "label": "montage · walk-in",
+   "src": "C004",
+   "in": 1.0,
+   "beats": 4,
+   "speed": 1.25,
+   "audio": "amb",
+   "gain_db": -14
+  },
+  {
+   "label": "timelapse",
+   "src": "C006",
+   "in": 0.0,
+   "beats": 8,
+   "src_span": 20.0,
+   "audio": "mute"
+  },
+  {
+   "label": "product · hit",
+   "src": "C009",
+   "in": 2.0,
+   "beats": 4,
+   "audio": "amb",
+   "gain_db": -10
+  },
+  {
+   "label": "detail 1",
+   "src": "C010",
+   "in": 0.5,
+   "beats": 2,
+   "audio": "amb",
+   "gain_db": -14
+  },
+  {
+   "label": "detail 2",
+   "src": "C011",
+   "in": 0.3,
+   "beats": 2,
+   "audio": "amb",
+   "gain_db": -14
+  },
+  {
+   "label": "cta",
+   "src": "C014",
+   "in": 0.2,
+   "out": 3.4,
+   "audio": "voice",
+   "captions": true
+  }
+ ],
+ "cards": [
+  {
+   "segment": 4,
+   "at": 0.1,
+   "dur": 1.4,
+   "kicker": "Feature",
+   "title": "detail one",
+   "side": "left"
+  },
+  {
+   "segment": 5,
+   "at": 0.1,
+   "dur": 1.4,
+   "kicker": "Feature",
+   "title": "detail two",
+   "side": "right"
+  }
+ ],
+ "zooms": [
+  {
+   "segment": 3,
+   "s0": 1.0,
+   "s1": 1.15,
+   "ox": 0.5,
+   "oy": 0.55,
+   "at": 0,
+   "dur": 1.5
+  }
+ ],
+ "flashes": [
+  {
+   "segment": 3,
+   "at": 0.0,
+   "dur": 0.18,
+   "peak": 0.7
+  }
+ ],
+ "sfx": [
+  {
+   "file": "audio/whoosh.wav",
+   "segment": 3,
+   "offset": -0.25,
+   "db": -9
+  }
+ ],
+ "remotion": {
+  "composition": "GboMontage",
+  "props": {
+   "captionY": 1340,
+   "captionStyle": "dark"
+  }
+ }
+}
