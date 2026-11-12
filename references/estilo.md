@@ -29,7 +29,8 @@ nota un recurso como recurso, sobró.
   ≈ 0,2–0,4 s; cambio de capítulo = cola más larga + separador visual/sonoro.
 - **Aire mínimo medido por energía** (no por timestamps de Whisper): ≥ 0,15 s de cola tras la
   última sílaba y ≥ 0,15 s antes de la primera; 0,4–0,5 s de respiración total en un cambio de
-  toma o de locación. Con ~0,08 s el creador percibe "voz pisada".
+  toma o de locación. Con ~0,08 s el creador percibe "voz pisada". Medirlo con
+  `scripts/cut_energy.py check edit/edl.json` (e `islands` para ver dónde empieza y termina de verdad una frase).
 - **Verificar los cortes sobre la base sin música** (o transcribiendo tramos aislados): sobre el
   mix final Whisper alucina palabras en los silencios entre segmentos ("no", "eso"). En tomas
   con viento adelanta palabras 0,1–0,4 s: alinear por energía (desplazamiento ≥ 0) y fijar los
@@ -55,7 +56,8 @@ nota un recurso como recurso, sobró.
 - Siempre con burbuja/rectángulo de fondo (legibilidad sobre cualquier fondo), con esquinas
   redondeadas (en Remotion: `Captions`; quemados: `caption_style.rounded` en `gbo_render.py`).
 - Chunks que respeten las frases: no cruzar un punto final ("tarde. Así que ahí") ni dejar
-  chunks de una palabra suelta; si `chunk()` lo hace, re-segmentar con la lista de frases antes de Remotion.
+  chunks de una palabra suelta; si `chunk()` lo hace, re-segmentar con `scripts/rechunk.py` (una frase
+  por línea) antes de Remotion.
 - Dos variantes en la plantilla: `paper` (burbuja clara) y `dark` (estilo reel: caja oscura,
   énfasis en bloque de acento, palabras aún no dichas atenuadas). El perfil dice cuál es la por defecto.
 - Tipografía y color: roles de `marca.md` (perfil local). Burbuja en el color de superficie

@@ -11,6 +11,8 @@ Learnings from four more edits (event recap, a shop promo, a product-launch reel
   `[range, source_time]` resolved to output time (`<out>.cards.json`), rounded caption box
   (`caption_style.rounded`), captions never spill into the next range
 - `mix_audio.py`: licensed music track with `--music`, `--music-offset` and its own fade-out; `--no-sfx`
+- New `cut_energy.py`: air before/after the voice in every EDL range (adaptive noise-floor threshold) and voiced islands
+- New `rechunk.py`: re-segment captions at phrase boundaries from a one-phrase-per-line file, keeping word timings
 - Music: the track's ending never lands under the CTA; lower library masters before ducking
 - Remotion: `Captions` `dark` variant (reel style), `EndCard` (typed URL) in `GboVertical`, `cardWidth`, new icons,
   `GboCover` with four layouts (`duo`, `single`, `frame`, `split`)
