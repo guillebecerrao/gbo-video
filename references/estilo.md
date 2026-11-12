@@ -13,6 +13,8 @@ nota un recurso como recurso, sobró.
 - Silencios internos: dejar respiración natural de ~0.15–0.30 s; eliminar gaps > 0.6 s.
 - Muletillas ("eh", "este", "o sea" de relleno, falsos comienzos): eliminar, salvo
   que la pausa sea expresiva (preguntar si hay duda).
+- **Titubeos y vocales sostenidas se cortan, nunca se aceleran**: acelerar un "eeeh" se nota
+  y suena artificial. Se detectan por pitch estable + espectro similar entre ventanas.
 - Fundidos de audio cortos en cada corte (video-use usa 30 ms por defecto).
 - Jump cuts permitidos en vertical; en long form, cubrir con zoom o B-roll cuando molesten.
 - Verificar cada punto de corte con la waveform (`timeline_view`) o `silencedetect`: los
@@ -25,6 +27,14 @@ nota un recurso como recurso, sobró.
   repetir sílabas.
 - **Aire entre segmentos**: mismo hablante ≈ 0,1 s; cambio de interlocutor dentro del tema
   ≈ 0,2–0,4 s; cambio de capítulo = cola más larga + separador visual/sonoro.
+- **Aire mínimo medido por energía** (no por timestamps de Whisper): ≥ 0,15 s de cola tras la
+  última sílaba y ≥ 0,15 s antes de la primera; 0,4–0,5 s de respiración total en un cambio de
+  toma o de locación. Con ~0,08 s el creador percibe "voz pisada". Medirlo con
+  `scripts/cut_energy.py check edit/edl.json` (e `islands` para ver dónde empieza y termina de verdad una frase).
+- **Verificar los cortes sobre la base sin música** (o transcribiendo tramos aislados): sobre el
+  mix final Whisper alucina palabras en los silencios entre segmentos ("no", "eso"). En tomas
+  con viento adelanta palabras 0,1–0,4 s: alinear por energía (desplazamiento ≥ 0) y fijar los
+  tiempos a mano en frases cortas.
 - **No cortar al hablante a mitad de idea justo antes de que entre el otro** (parece
   interrupción): extender hasta el cierre de la frase, salvo que lo que sigue sea relleno.
 
@@ -43,7 +53,13 @@ nota un recurso como recurso, sobró.
 - Posición vertical: tercio inferior, dentro de la zona segura (ver `plataformas.md`).
 - Sin emojis automáticos. Sin animaciones "bounce" exageradas: fade/slide ≤ 120 ms.
 - Ortografía: aplicar `glosario.md` antes de quemar. Términos en inglés en su forma correcta (ej. "prompt", no "promt").
-- Siempre con burbuja/rectángulo de fondo (legibilidad sobre cualquier fondo).
+- Siempre con burbuja/rectángulo de fondo (legibilidad sobre cualquier fondo), con esquinas
+  redondeadas (en Remotion: `Captions`; quemados: `caption_style.rounded` en `gbo_render.py`).
+- Chunks que respeten las frases: no cruzar un punto final ("tarde. Así que ahí") ni dejar
+  chunks de una palabra suelta; si `chunk()` lo hace, re-segmentar con `scripts/rechunk.py` (una frase
+  por línea) antes de Remotion.
+- Dos variantes en la plantilla: `paper` (burbuja clara) y `dark` (estilo reel: caja oscura,
+  énfasis en bloque de acento, palabras aún no dichas atenuadas). El perfil dice cuál es la por defecto.
 - Tipografía y color: roles de `marca.md` (perfil local). Burbuja en el color de superficie
   (~95% de opacidad), texto en el color de texto, sans en peso 700, énfasis en el color de
   acento. El chunk del CTA va en el color de acción, que no se usa en nada más. Nunca amarillo
@@ -55,6 +71,13 @@ nota un recurso como recurso, sobró.
 - Títulos en la tipografía serif de la marca (la voz); kickers en sans 600, mayúsculas espaciadas.
 - Lower third con el monograma de la marca (tipografía mono) + nombre + cargo.
 - Un split screen o tarjeta por idea clave; 2–3 por minuto como máximo.
+- Tarjetas y textos **no tapan caras**; revisar en QA, porque al mover tiempos una tarjeta puede
+  terminar sobre una cara.
+- Gráficos y cortes no van atados 1:1: una tarjeta puede entrar antes de un corte y salir
+  después. Anclar sus tiempos a la fuente (`[rango, tiempo_fuente]` en el EDL) para que
+  sobrevivan a los re-cortes.
+- **Cierre con URL**: si el CTA lleva a una URL, la `EndCard` (URL tecleada + clic) entra cuando
+  se dice el CTA, con la voz encima; evita volver a cortar entre tomas al final.
 
 ## Efectos de sonido (SFX)
 - Solo en: transición de sección, aparición de un gráfico/título, revelación de un dato.
@@ -65,8 +88,13 @@ nota un recurso como recurso, sobró.
 
 ## Música
 - Opcional. Si va: instrumental, sin voz, ducking bajo la voz.
-- Solo con licencia clara (registrar la fuente en `edit/estrategia.md`), o sintetizada ad hoc
-  (`edit/make_audio.py`, sin licencia que registrar) mientras no haya librería propia.
+- Solo con licencia clara (librería del creador, registrar pista e ID en `edit/estrategia.md`),
+  o sintetizada ad hoc (`edit/make_audio.py`) como respaldo.
+- **El final de la música no cae bajo el CTA.** Tomar el tema desde la sección que calza con el
+  tono del hook (suele ser la enérgica) y cerrar con un fade propio que termine después del CTA.
+  Las ediciones automáticas "a duración exacta" de las librerías suelen terminar en un fade justo
+  bajo el CTA: usarlas solo si se verificó su final.
+- Los masters de librería vienen cerca de −9 LUFS: bajarlos (≈ −14 dB) antes del ducking.
 - Niveles aprobados en el piloto: música −9 dB con ducking sidechain bajo la voz; SFX −8 dB
   (mezcla vía `edit/mix_audio.py`). Ajustar a oído.
 
@@ -76,7 +104,15 @@ nota un recurso como recurso, sobró.
 - Loudness final −14 LUFS / −1 dBTP (loudnorm de dos pasadas).
 
 ## Color e imagen
-- Un único look por serie. Correcciones mínimas: balance de blancos, exposición, contraste leve.
+- **Primero la conversión por metadatos, después el look.** Decidir por el archivo, nunca por el
+  equipo: `ffprobe -show_entries stream=color_transfer,color_primaries,pix_fmt`.
+  - `arib-std-b67` (HLG) o `smpte2084` (PQ) → convertir a SDR bt709 (zscale + tonemap). Sin esto
+    el material HDR se ve lavado o "nostálgico".
+  - Perfil log → LUT de conversión del fabricante, no tonemap.
+  - `bt709` / SDR → no convertir.
+  En `gbo_render.py`: `color_chain` (conversión) y luego `grade` (look). Mostrar un antes/después
+  al creador antes de renderizar.
+- Un único look por serie o por locación. Correcciones mínimas: balance de blancos, exposición, contraste leve.
 - Piel natural por sobre todo; no "teal & orange" agresivo.
 
 ## Transiciones

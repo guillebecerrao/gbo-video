@@ -93,7 +93,7 @@ Si llega material ya grabado sin brief: crear la carpeta igual, pedir que deje l
 | 0. Brief | Objetivo, plataforma, ángulo (STORY/VALUE), duración, CTA | `brief.md` | — |
 | 1. Guion | Plantilla `templates/guion.md` + plan de producción | `guion.md` o `guion_snapshot.md` | El creador aprueba |
 | 2. Grabación | Checklist de grabación (en la plantilla de guion); guion legible en teleprompter si el creador lo usa | `raw/` | — |
-| 3. Ingesta | Inventario de tomas, duración, resolución, fps, audio; proxies si pesa mucho | `edit/inventario.md` | — |
+| 3. Ingesta | Inventario de tomas + checklist de ingesta (abajo); proxies si pesa mucho | `edit/inventario.md` | ⏸ Si hay HDR/log o espejo, antes/después al creador |
 | 4. Transcripción | Whisper large-v3-turbo local (mlx-whisper, idioma forzado, glosario como `--prompt`), timestamps por palabra; luego pasada de corrección con el glosario (corrige texto, nunca timestamps) | transcript + `edit/correcciones.md` | ⏸ El creador revisa correcciones |
 | 5. Estrategia de corte | Comparar guion vs. transcript (o guion reverso); elegir tomas; proponer corte con timestamps | `edit/estrategia.md` | ⏸ El creador aprueba |
 | 6. Corte y pulido | video-use + ffmpeg según `references/estilo.md` | preview | ⏸ El creador revisa preview |
@@ -124,11 +124,27 @@ YYYY-MM-DD_slug/
     project.md    # memoria de sesión de video-use
 ```
 
+## Checklist de ingesta (fase 3)
+
+Lo que el agente no detecta aquí lo descubre el creador en la versión 3. Por cada toma, con `ffprobe` y un frame:
+- **Color**: `color_transfer` / `color_primaries` / `pix_fmt`. HLG (`arib-std-b67`) o PQ (`smpte2084`) → conversión
+  a SDR; log → LUT; SDR → nada (ver `references/estilo.md` § Color). Decidir por metadatos, nunca por el modelo de cámara.
+- **Espejo**: mirar un frame buscando texto invertido (ropa, objetos, pantallas). La cámara frontal y algunas apps
+  graban espejado → `hflip: true` en el EDL.
+- **Rotación**: `side_data` / `rotate`; confirmar que la orientación final es la del brief.
+- **fps** y resolución: si las tomas mezclan 24/25/30 fps, elegir el fps de salida (`fps` en el EDL) y avisar.
+  25 fps a 1.2x calza 1:1 con 30 fps.
+- **Audio**: canales, lavalier vs. cámara, viento (adelanta la transcripción; ver § Ritmo y cortes).
+- Tomas sin voz (B-roll): no transcribir, o descartar su transcript (Whisper alucina frases de cierre).
+
 ## Versionado de entregables
 
 Evita que el creador revise el archivo equivocado (caso real: abrir `final_youtube.v1.mp4` creyendo que era el más nuevo, cuando la corrección estaba en `final_youtube.mp4`).
 - Todo archivo que el creador revisa lleva versión explícita y creciente desde la primera entrega: `final_youtube_v1.mp4`, `final_youtube_v2.mp4`… Nunca un nombre sin número que se sobrescribe mientras el respaldo recibe el número.
 - Al entregar una versión nueva, mover las anteriores a `edit/_reemplazados/`: en la carpeta de entrega queda **un solo** candidato por pieza.
+- **Un solo contador por pieza, de los previews al final**: cada render que el creador ve sube el número, y el
+  final continúa la serie (`reel_v3` → `final_reels_v4`, nunca reiniciar en `v1`). Nunca re-renderizar sobre un
+  número que el creador ya abrió (en Frameback o en el reproductor): eso es una versión nueva.
 - Sobrescribir el mismo archivo solo en trabajo intermedio que el creador no revisa (proxies, cachés, renders de verificación).
 - El mensaje de entrega dice ruta completa + versión + qué cambió respecto a la anterior.
 - Los archivos asociados (SRT, portada, thumbnail, props) llevan la misma versión que la pieza a la que pertenecen.
@@ -138,7 +154,7 @@ Evita que el creador revise el archivo equivocado (caso real: abrir `final_youtu
 - **video-use + ffmpeg**: corte, limpieza de muletillas, silencios, color, loudness, subtítulos quemados. Transcripción local con `helpers/transcribe_local.py` (sin servicios pagados).
 - **ffmpeg con libass/drawtext**: requerido. En macOS, Homebrew `ffmpeg-full` (keg-only); los scripts lo agregan al PATH solos (`GBO_FFMPEG_DIR` para otra ruta).
 - **Whisper large-v3-turbo** (mlx-whisper): transcripción local con idioma forzado. Parakeet v3 se probó y derivaba a inglés en español con términos técnicos. Igual falla en términos técnicos → glosario.
-- **Scripts** (`scripts/`, copiar a `edit/` de cada proyecto): `gbo_render.py` (corte con punch-in, limpieza de voz, B-roll y captions desde un `edl.json`; deja un `.timeline.json` para Frameback), `make_audio.py` (música y SFX sintetizados), `mix_audio.py` (ducking + loudnorm).
+- **Scripts** (`scripts/`, copiar a `edit/` de cada proyecto): `gbo_render.py` (corte con punch-in, velocidad y silencio por tramo, conversión de color + grade + espejo, limpieza de voz, B-roll y tarjetas anclados al tiempo de la fuente, captions con caja redondeada, desde un `edl.json`; deja un `.timeline.json` para Frameback), `make_audio.py` (música y SFX sintetizados), `mix_audio.py` (ducking + loudnorm, con música sintetizada o una pista con licencia desde un offset y fade propio), `cut_energy.py` (aire de cada corte medido por energía e islas de voz; correrlo antes de cada preview) y `rechunk.py` (re-segmentar los captions por frases antes de Remotion).
 - **Remotion**: motion graphics, captions animados, tarjetas de título, thumbnail. Se compone sobre el corte ya hecho, no lo reemplaza.
 - **Frameback** (opcional): revisión anclada a cuadros, regiones y entidades del timeline, con feedback incremental. Ver `references/frameback.md`. Si no está instalado, los checkpoints funcionan igual por chat.
 - **Teleprompter** (opcional): [teleprompter.guillebecerrao.cl](https://teleprompter.guillebecerrao.cl/), web, sin instalación; editor en el computador y proyección en un iPad, sincronizados por sesión con código y clave. Al aprobar el guion (fase 1), ofrecer una versión limpia para pegar: solo el texto hablado, sin marcadores de edición ni tabla de tomas.
@@ -155,7 +171,10 @@ Evita que el creador revise el archivo equivocado (caso real: abrir `final_youtu
 - [ ] Sin pops de audio en los cortes; loudness según `plataformas.md`
 - [ ] Captions sin errores ortográficos ni de glosario; dentro de zonas seguras
 - [ ] Ningún efecto sin razón (revisar contra la lista de prohibidos en `estilo.md`)
-- [ ] Encuadre: cara nunca cortada por el reencuadre 9:16
+- [ ] Encuadre: cara nunca cortada por el reencuadre 9:16; ninguna tarjeta o texto sobre una cara
+- [ ] Cortes verificados sobre la base sin música, con aire suficiente (≥ 0,15 s)
+- [ ] El final de la música no cae bajo el CTA
+- [ ] Color convertido según los metadatos (nada lavado ni "nostálgico") y sin material espejado
 - [ ] Duración dentro del rango del brief
 - [ ] Revisión visual final por el creador
 
