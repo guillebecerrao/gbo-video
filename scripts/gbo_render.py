@@ -11,6 +11,10 @@ apply_loudnorm_two_pass (-14 LUFS / -1 dBTP).
 Usage (run with video-use's venv):
     python edit/gbo_render.py edit/edl.json --preview   # 540×960, fast
     python edit/gbo_render.py edit/edl.json             # 1080×1920 final
+
+Optional EDL keys:
+    "hflip": true            mirror-correct selfie footage (text on clothes/objects reads backwards)
+    "grade": "<ffmpeg vf>"   color grade applied in the same pass (e.g. eq=…,colorbalance=…,curves=…)
 """
 
 from __future__ import annotations
@@ -32,6 +36,8 @@ sys.path.insert(0, str(Path(os.environ.get("VIDEO_USE_DIR", Path.home() / "Devel
 import render  # noqa: E402
 
 FPS = "24"
+HFLIP = False  # set from edl["hflip"]: mirror-correct selfie footage
+GRADE = ""     # set from edl["grade"]: ffmpeg filter chain (color grade)
 def hex_to_ass(h: str) -> str:
     h = h.lstrip("#")
     return f"&H00{h[4:6]}{h[2:4]}{h[0:2]}&".upper().replace("&H00", "&H00", 1)
@@ -62,13 +68,14 @@ def extract_range(src: Path, start: float, end: float, punches: list[list[float]
                   scale: float, W: int, H: int, out: Path, preview: bool,
                   voice_chain: str = "") -> None:
     dur = end - start
+    pre = ("hflip," if HFLIP else "") + (GRADE + "," if GRADE else "")
     if punches:
         cond = "+".join(f"between(it,{a - start:.3f},{b - start:.3f})" for a, b in punches)
-        vf = (f"scale={W * 2}:{H * 2},setsar=1,"
+        vf = (pre + f"scale={W * 2}:{H * 2},setsar=1,"
               f"zoompan=z='if({cond},{scale},1)':x='iw/2-(iw/zoom/2)':y='(ih-ih/zoom)*0.08'"
               f":d=1:s={W}x{H}:fps={FPS}")
     else:
-        vf = f"scale={W}:{H},setsar=1"
+        vf = pre + f"scale={W}:{H},setsar=1"
     af = (voice_chain + "," if voice_chain else "") + f"afade=t=in:st=0:d=0.03,afade=t=out:st={max(0, dur - 0.03):.3f}:d=0.03"
     run(["ffmpeg", "-y", "-ss", f"{start:.3f}", "-i", str(src), "-t", f"{dur:.3f}",
          "-vf", vf, "-af", af, *encode_args(preview), "-pix_fmt", "yuv420p", "-r", FPS,
@@ -289,6 +296,10 @@ def main() -> None:
     edl_path = args.edl.resolve()
     edit_dir = edl_path.parent
     edl = json.loads(edl_path.read_text())
+    global HFLIP
+    HFLIP = bool(edl.get("hflip", False))
+    global GRADE
+    GRADE = edl.get("grade", "")
     W, H = (540, 960) if args.preview else (1080, 1920)
     tag = "preview" if args.preview else "final"
     work = edit_dir / f"work_{tag}"
