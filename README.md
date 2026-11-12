@@ -1,6 +1,11 @@
-# gbo-video
+# gbo-video-method
 
 **[Español](#español) · [English](#english)**
+
+> El repo se llama `gbo-video-method` porque guarda el **método**; la skill se sigue llamando `gbo-video`
+> (`/gbo-video` en Claude Code). Lo personal de cada creador vive aparte, en su perfil local.
+> *The repo holds the **method**; the skill is still called `gbo-video`. Each creator's personal settings live in a
+> separate local profile.* (Antes / formerly: `guillebecerrao/gbo-video`.)
 
 ---
 
@@ -59,8 +64,8 @@ velocidad configurables, una línea guía desplazable, pausa, retroceder unos se
 ### Inicio rápido
 
 ```bash
-git clone https://github.com/guillebecerrao/gbo-video ~/Developer/gbo-video
-mkdir -p ~/.claude/skills && ln -sfn ~/Developer/gbo-video ~/.claude/skills/gbo-video
+git clone https://github.com/guillebecerrao/gbo-video-method ~/Developer/gbo-video-method
+mkdir -p ~/.claude/skills && ln -sfn ~/Developer/gbo-video-method ~/.claude/skills/gbo-video
 ```
 
 Abre Claude Code en una carpeta para tus videos y di *"nuevo video con gbo-video"*. En el primer
@@ -134,8 +139,8 @@ line, pause, jump back a few seconds and refresh.
 ### Quick start
 
 ```bash
-git clone https://github.com/guillebecerrao/gbo-video ~/Developer/gbo-video
-mkdir -p ~/.claude/skills && ln -sfn ~/Developer/gbo-video ~/.claude/skills/gbo-video
+git clone https://github.com/guillebecerrao/gbo-video-method ~/Developer/gbo-video-method
+mkdir -p ~/.claude/skills && ln -sfn ~/Developer/gbo-video-method ~/.claude/skills/gbo-video
 ```
 
 Then open Claude Code in a folder for your videos and say *"nuevo video con gbo-video"* (or

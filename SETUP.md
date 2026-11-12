@@ -16,9 +16,9 @@ Instala solo los niveles que vayas a usar en cada equipo.
 ## A. Skill
 
 ```bash
-git clone https://github.com/guillebecerrao/gbo-video ~/Developer/gbo-video
+git clone https://github.com/guillebecerrao/gbo-video-method ~/Developer/gbo-video-method
 mkdir -p ~/.claude/skills
-ln -sfn ~/Developer/gbo-video ~/.claude/skills/gbo-video
+ln -sfn ~/Developer/gbo-video-method ~/.claude/skills/gbo-video
 ```
 Verificación: abre Claude Code y pregunta "¿qué dice gbo-video sobre los zooms?".
 
@@ -41,7 +41,7 @@ git clone https://github.com/browser-use/video-use ~/Developer/video-use
 ln -sfn ~/Developer/video-use ~/.claude/skills/video-use
 cd ~/Developer/video-use && uv sync
 
-cp ~/Developer/gbo-video/vendor/video-use/helpers/transcribe_local.py helpers/
+cp ~/Developer/gbo-video-method/vendor/video-use/helpers/transcribe_local.py helpers/
 uv pip install mlx-whisper parakeet-mlx scipy
 ```
 Prueba rápida (la primera vez descarga whisper-large-v3-turbo, ~1.5 GB):
@@ -62,7 +62,7 @@ la fase 7, el agente la copia a tu carpeta de trabajo y la adapta a tu marca
 (`references/remotion.md`). Para hacerlo a mano:
 ```bash
 P=${GBO_VIDEO_PROFILE:-~/.config/gbo-video}
-cp -R ~/Developer/gbo-video/remotion "$P/remotion" && rm -rf "$P/remotion/node_modules"
+cp -R ~/Developer/gbo-video-method/remotion "$P/remotion" && rm -rf "$P/remotion/node_modules"
 cd "$P/remotion" && npm install
 echo node_modules >> "$P/.gitignore"   # si el perfil es un repo git
 npm run dev   # preview en el navegador
@@ -73,14 +73,14 @@ Remotion exige licencia comercial a partir de cierto tamaño de empresa: revisa 
 
 ```bash
 mkdir -p ~/.config/gbo-video
-cp ~/Developer/gbo-video/templates/perfil.md ~/.config/gbo-video/perfil.md
+cp ~/Developer/gbo-video-method/templates/perfil.md ~/.config/gbo-video/perfil.md
 ```
 Complétalo (o pide al agente que lo haga contigo en el primer uso). Usa `GBO_VIDEO_PROFILE` si
 quieres el perfil en otra ruta, por ejemplo dentro de un repo privado tuyo.
 
 ## Actualizar
 ```bash
-cd ~/Developer/gbo-video && git pull
+cd ~/Developer/gbo-video-method && git pull
 ```
 Tu perfil y tu copia de Remotion viven fuera de la skill, así que actualizar no los pisa. Si
 `transcribe_local.py` cambia, vuelve a copiarlo a `~/Developer/video-use/helpers/`.

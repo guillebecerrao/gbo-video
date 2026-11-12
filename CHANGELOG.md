@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 — 2026-11-12
+- Repository renamed `gbo-video` → `gbo-video-method` (GitHub redirects the old URL). The skill name is unchanged:
+  `gbo-video`, linked as `~/.claude/skills/gbo-video`. Suggested clone path is now `~/Developer/gbo-video-method`.
+
 ## 0.3.0 — 2026-11-12
 - Music montage reels: new `scripts/reel_render.py` (beat-length segments snapped to the music grid, speed and
   timelapse, ambient/mute audio, muffled intro until the drop, music stop, natural outro, ducking, captions aligned
