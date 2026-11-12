@@ -14,17 +14,27 @@ requisito:** si no está disponible, los checkpoints ⏸ funcionan exactamente i
   herramienta **Monitor** (una notificación por comentario del creador, sin los ecos de lo que escribe el agente). `gbo_render.py` deja junto al render un `<salida>.timeline.json` que Frameback
   usa para mostrar cortes, cambios de speaker, B-roll, punch-ins y captions con tiempos exactos (`--no-timeline` lo
   desactiva). Si no hay sidecar, Frameback lee `edit/edl.json` (tiempos aproximados).
-- **Mientras el creador revisa (trabajo encolado):** por cada comentario, mirar el snapshot (`snapshots/<id>.jpg`) y
-  clasificar:
-  1. *Preparable ya* (cambiar un punto de corte, sacar o reemplazar un B-roll, corregir un caption o el glosario,
-     ajustar un punch-in) → `frameback update <dir> <id> --status in_progress`, aplicar el cambio sobre
-     **`edit/edl.next.json`** (copia de staging del EDL; nunca tocar el entregable), y `--status prepared --plan "…"`.
-  2. *Requiere render o decisión editorial* → `--status acknowledged` con el plan; se resuelve al procesar.
-  3. *Ambiguo* → `--status needs_info` + `frameback reply <dir> <id> "pregunta concreta"`. No adivinar.
-  Comentario editado (`revision` > `seenRevision`) → re-planificar; comentario borrado → deshacer lo preparado.
-  Las decisiones de juicio editorial (re-estructurar el corte, cambiar el hook) siguen la regla de **Modelo por fase**.
-- **Al pulsar "Procesar" (`review.submitted`):** `frameback review <dir> --state processing`; promover
-  `edl.next.json` → `edl.json`, terminar lo pendiente y renderizar **una sola vez** la versión siguiente según
+- **Mientras el creador revisa: adelantar todo lo posible, apenas llega cada comentario.** Nunca esperar a
+  `review.submitted` para empezar (y no usar `watch --exit-on review.submitted` como alternativa: eso rompe el flujo).
+  El orquestador de la edición **no hace el trabajo pesado**: atiende el aviso, mira el snapshot
+  (`snapshots/<id>.jpg`), clasifica y reparte; así queda libre para el comentario siguiente.
+  1. *Ajuste puntual* (cambiar un punto de corte, sacar un B-roll, corregir un caption o el glosario, ajustar un
+     punch-in) → `frameback update <dir> <id> --status in_progress`, aplicar el cambio sobre **`edit/edl.next.json`**
+     (copia de staging del EDL; nunca tocar el entregable) y `--status prepared --plan "…"`.
+  2. *Requiere producir algo* (otra foto o B-roll, otra canción, rediseñar una animación o tarjeta, un SFX, un regrade)
+     → `--status in_progress` con el plan y **lanzar un subagente en segundo plano** que lo deje listo en staging:
+     asset en `edit/staging/<id>/` (o componente/props de Remotion con un still de prueba) y la entrada que usaría en
+     `edl.next.json`. Al terminar, el orquestador revisa el resultado y marca `--status prepared --plan "…"`. Varios
+     subagentes pueden correr en paralelo si no tocan lo mismo; dos comentarios sobre el mismo tramo, uno solo.
+  3. *Decisión del creador o ambiguo* (re-estructurar el corte, cambiar el hook, gusto no claro) →
+     `--status needs_info` + `frameback reply <dir> <id> "pregunta concreta"` (con opciones si ayuda). No adivinar;
+     cuando responda, pasa a 1 o 2.
+  Comentario editado (`revision` > `seenRevision`) → re-planificar (y cancelar el subagente si quedó obsoleto);
+  comentario borrado → deshacer lo preparado. Las decisiones de juicio editorial siguen la regla de **Modelo por fase**.
+- **Al pulsar "Procesar" (`review.submitted`) — el botón del creador gatilla el entregable:** solo se integra lo ya
+  preparado; nada se empieza de cero aquí. Esperar a los subagentes que sigan corriendo, `frameback review <dir>
+  --state processing`; promover `edl.next.json` → `edl.json` (con los assets de `edit/staging/`) y renderizar **una
+  sola vez** la versión siguiente según
   **Versionado de entregables** (`_vN+1`, mover la anterior a `edit/_reemplazados/`); marcar cada comentario
   `--status applied --applied-in <archivo>_vN+1` (o `declined` con razón); `frameback review <dir> --state delivered
   --next-video edit/<archivo>_vN+1.mp4` y abrir la nueva versión (`frameback open …`): los comentarios se traspasan

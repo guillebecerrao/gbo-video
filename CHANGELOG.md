@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2 — 2026-11-12
+- Frameback review flow (`references/frameback.md`): every comment is handled as soon as it arrives. The editing
+  orchestrator classifies and delegates; anything that needs producing (another photo, song, animation, SFX, regrade)
+  goes to a background subagent that leaves it ready in staging. "Process" (`review.submitted`) only integrates what
+  is prepared and renders the next version once. Never wait for the submit, never use `watch --exit-on`.
+
 ## 0.3.1 — 2026-11-12
 - Repository renamed `gbo-video` → `gbo-video-method` (GitHub redirects the old URL). The skill name is unchanged:
   `gbo-video`, linked as `~/.claude/skills/gbo-video`. Suggested clone path is now `~/Developer/gbo-video-method`.
