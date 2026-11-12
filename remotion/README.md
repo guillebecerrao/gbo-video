@@ -12,7 +12,7 @@ the theme with your own tokens (see `../references/remotion.md`).
 
 ```bash
 P=${GBO_VIDEO_PROFILE:-~/.config/gbo-video}
-cp -R ~/Developer/gbo-video/remotion "$P/remotion" && cd "$P/remotion" && npm install
+cp -R ~/Developer/gbo-video-method/remotion "$P/remotion" && cd "$P/remotion" && npm install
 npm run dev       # Remotion Studio
 npx remotion render GboReel out.mp4 --props=props.json
 ```
