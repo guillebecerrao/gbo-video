@@ -61,8 +61,10 @@ Requiere Node 20+. La plantilla está en `remotion/` de esta skill; la primera v
 la fase 7, el agente la copia a tu carpeta de trabajo y la adapta a tu marca
 (`references/remotion.md`). Para hacerlo a mano:
 ```bash
-cp -R ~/Developer/gbo-video/remotion ~/Developer/gbo-remotion
-cd ~/Developer/gbo-remotion && npm install
+P=${GBO_VIDEO_PROFILE:-~/.config/gbo-video}
+cp -R ~/Developer/gbo-video/remotion "$P/remotion" && rm -rf "$P/remotion/node_modules"
+cd "$P/remotion" && npm install
+echo node_modules >> "$P/.gitignore"   # si el perfil es un repo git
 npm run dev   # preview en el navegador
 ```
 Remotion exige licencia comercial a partir de cierto tamaño de empresa: revisa sus condiciones.

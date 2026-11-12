@@ -7,6 +7,7 @@ import { LongProps } from "./long/types";
 import { GboReel } from "./reel/GboReel";
 import { ReelProps } from "./reel/types";
 import { CoverProps, GboCover, GboCoverSolo, GboCoverSplit } from "./reel/GboCover";
+import { GboMontage, MontageProps } from "./reel/GboMontage";
 import { GboThumb, ThumbProps } from "./long/GboThumb";
 import { Still } from "remotion";
 
@@ -69,6 +70,19 @@ export const RemotionRoot: React.FC = () => (
     defaultProps={defaultProps}
     calculateMetadata={({ props }) => ({
       durationInFrames: Math.round(props.durationSec * FPS),
+    })}
+  />
+  <Composition
+    id="GboMontage"
+    component={GboMontage}
+    fps={FPS}
+    width={1080}
+    height={1920}
+    durationInFrames={FPS * 5}
+    defaultProps={{ video: "base_av.mp4", durationSec: 5, captions: [], cards: [], zooms: [], flashes: [] } as MontageProps}
+    calculateMetadata={({ props }) => ({
+      fps: props.fps ?? FPS,
+      durationInFrames: Math.round(props.durationSec * (props.fps ?? FPS)),
     })}
   />
   </>

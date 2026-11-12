@@ -9,14 +9,25 @@ third, paneles divididos, tarjeta de título, reel vertical, long form 16:9, por
 thumbnail de YouTube. Viene con la marca del autor como **ejemplo** (`src/theme.ts`).
 
 **Primer uso (fase 7 por primera vez):**
-1. Copiar la plantilla a la carpeta de trabajo que indica el perfil (`perfil.md` → Remotion;
-   por defecto `~/Developer/gbo-remotion`). No trabajar dentro de la carpeta de la skill: al
-   actualizar la skill se pisarían los cambios del creador.
+1. Copiar la plantilla **dentro del perfil**, en `<perfil>/remotion/` (`$GBO_VIDEO_PROFILE/remotion` o
+   `~/.config/gbo-video/remotion`), salvo que `perfil.md` → Remotion diga otra ruta o exista `GBO_REMOTION_DIR`.
+   Así las reglas de estilo y los componentes que nacen de cada video viajan juntos: si el perfil es un repo
+   git, una rama por video lleva ambas cosas y se integra de una vez. No trabajar dentro de la carpeta de la
+   skill: al actualizarla se pisarían los cambios del creador.
 2. `npm install` en la copia.
 3. Reemplazar `src/theme.ts` con los valores del `marca.md` del perfil, incluido `monogram`
    (⏸ mostrar el diff al creador).
-4. La copia es del creador: los componentes nuevos o ajustados se versionan ahí (idealmente en
-   su propio repo git), no en esta skill.
+4. La copia es del creador: los componentes nuevos o ajustados se versionan con el perfil, no en esta
+   skill. Lo que sirva a cualquiera vuelve a la plantilla como propuesta (issue o pull request), sin la marca.
+5. Agregar `node_modules` al `.gitignore` del perfil si es un repo.
+
+## Reel de montaje (`GboMontage` + `scripts/reel_render.py`)
+Para reels guiados por la música (montaje a beats, a menudo con un objeto como protagonista):
+`reel_render.py` arma el corte desde un EDL de segmentos (duración en beats con ajuste a la grilla, velocidad,
+timelapse, audio ambiente o mudo), la música con licencia (intro apagada hasta el drop, stop, outro natural,
+ducking) y los captions alineados por energía. Después renderiza `GboMontage` (captions, tarjetas, zooms y
+flashes desde props) o, con `--captions ass`, quema los captions con ffmpeg sin Remotion. Ejemplo de EDL:
+`templates/edl.reel.ejemplo.json`. SFX anclados a los props: `scripts/sfx_track.py` + `templates/sfx.ejemplo.json`.
 
 Plugin opcional con conocimiento de Remotion para Claude Code:
 ```bash
