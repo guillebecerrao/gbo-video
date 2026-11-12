@@ -6,7 +6,7 @@ import { GboLongform } from "./long/GboLongform";
 import { LongProps } from "./long/types";
 import { GboReel } from "./reel/GboReel";
 import { ReelProps } from "./reel/types";
-import { CoverProps, GboCover } from "./reel/GboCover";
+import { CoverProps, GboCover, GboCoverSolo, GboCoverSplit } from "./reel/GboCover";
 import { GboThumb, ThumbProps } from "./long/GboThumb";
 import { Still } from "remotion";
 
@@ -43,6 +43,10 @@ export const RemotionRoot: React.FC = () => (
     defaultProps={{ left: { img: "", name: "", x: 0, y: 0 }, right: { img: "", name: "", x: 0, y: 0 }, kicker: "", title: "", foot: "" } as ThumbProps} />
   <Still id="GboCover" component={GboCover} width={1080} height={1920}
     defaultProps={{ left: { img: "", name: "" }, right: { img: "", name: "" }, kicker: "", title: "", foot: "" } as CoverProps} />
+  <Still id="GboCoverSolo" component={GboCoverSolo} width={1080} height={1920}
+    defaultProps={{ layout: "frame", img: "", kicker: "", title: "", foot: "" } as CoverProps} />
+  <Still id="GboCoverSplit" component={GboCoverSplit} width={1080} height={1920}
+    defaultProps={{ layout: "split", left: { img: "" }, right: { img: "" }, kicker: "", title: "", foot: "" } as CoverProps} />
   <Composition
     id="GboReel"
     component={GboReel}

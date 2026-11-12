@@ -15,6 +15,15 @@ Usage (run with video-use's venv):
 Optional EDL keys:
     "hflip": true            mirror-correct selfie footage (text on clothes/objects reads backwards)
     "grade": "<ffmpeg vf>"   color grade applied in the same pass (e.g. eq=…,colorbalance=…,curves=…)
+    "color_chain": "<ffmpeg vf>"  source conversion applied BEFORE the grade (e.g. HLG/PQ → SDR bt709 with
+                             zscale+tonemap, or a log LUT). Decide it from the metadata, never from the camera model.
+    "fps": 30                output frame rate (default 24)
+    per range: "speed": 1.2  (setpts/atempo; captions and sidecar follow), "mute": true (silence that range)
+    per b-roll: "at": [range_index, source_time]   anchor resolved to output time (survives re-cuts)
+    "cards": [{"from": [i, t] | seconds, "to": [i, t] | seconds | "end", ...}]  timed overlays resolved to
+                             output time and written to <out>.cards.json (for Remotion props)
+    caption_style.rounded: true   rounded box drawn in ASS behind each chunk (needs PIL + the caption font file,
+                             GBO_CAPTION_FONT_FILE); size / y optional
 """
 
 from __future__ import annotations
@@ -38,6 +47,7 @@ import render  # noqa: E402
 FPS = "24"
 HFLIP = False  # set from edl["hflip"]: mirror-correct selfie footage
 GRADE = ""     # set from edl["grade"]: ffmpeg filter chain (color grade)
+COLOR = ""     # set from edl["color_chain"]: source conversion (HDR→SDR / log LUT), runs before GRADE
 def hex_to_ass(h: str) -> str:
     h = h.lstrip("#")
     return f"&H00{h[4:6]}{h[2:4]}{h[0:2]}&".upper().replace("&H00", "&H00", 1)
@@ -66,26 +76,33 @@ def encode_args(preview: bool) -> list[str]:
 
 def extract_range(src: Path, start: float, end: float, punches: list[list[float]],
                   scale: float, W: int, H: int, out: Path, preview: bool,
-                  voice_chain: str = "") -> None:
+                  voice_chain: str = "", mute: bool = False, speed: float = 1.0) -> None:
     dur = end - start
-    pre = ("hflip," if HFLIP else "") + (GRADE + "," if GRADE else "")
+    pre = (f"setpts=(PTS-STARTPTS)/{speed}," if speed != 1 else "") + video_pre()
     if punches:
-        cond = "+".join(f"between(it,{a - start:.3f},{b - start:.3f})" for a, b in punches)
+        cond = "+".join(f"between(it,{(a - start) / speed:.3f},{(b - start) / speed:.3f})" for a, b in punches)
         vf = (pre + f"scale={W * 2}:{H * 2},setsar=1,"
               f"zoompan=z='if({cond},{scale},1)':x='iw/2-(iw/zoom/2)':y='(ih-ih/zoom)*0.08'"
               f":d=1:s={W}x{H}:fps={FPS}")
     else:
         vf = pre + f"scale={W}:{H},setsar=1"
-    af = (voice_chain + "," if voice_chain else "") + f"afade=t=in:st=0:d=0.03,afade=t=out:st={max(0, dur - 0.03):.3f}:d=0.03"
+    dur = dur / speed   # output length; "-t" below is an output option
+    af = (f"atempo={speed}," if speed != 1 else "") + ("volume=0," if mute else "") + (voice_chain + "," if voice_chain else "") + f"afade=t=in:st=0:d=0.03,afade=t=out:st={max(0, dur - 0.03):.3f}:d=0.03"
     run(["ffmpeg", "-y", "-ss", f"{start:.3f}", "-i", str(src), "-t", f"{dur:.3f}",
          "-vf", vf, "-af", af, *encode_args(preview), "-pix_fmt", "yuv420p", "-r", FPS,
          "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-movflags", "+faststart", str(out)])
 
 
+def video_pre() -> str:
+    """Source conversion → grade → mirror fix, as a vf prefix ('' when nothing is set)."""
+    chain = [c for c in (COLOR, GRADE, "hflip" if HFLIP else "") if c]
+    return ",".join(chain) + "," if chain else ""
+
+
 def extract_broll(src: Path, start: float, dur: float, W: int, H: int, out: Path,
                   preview: bool) -> None:
     run(["ffmpeg", "-y", "-ss", f"{start:.3f}", "-i", str(src), "-t", f"{dur:.3f}",
-         "-vf", f"scale={W}:{H},setsar=1", "-an", *encode_args(preview),
+         "-vf", "".join(c + "," for c in (COLOR, GRADE) if c) + f"scale={W}:{H},setsar=1", "-an", *encode_args(preview),
          "-pix_fmt", "yuv420p", "-r", FPS, str(out)])
 
 
@@ -125,6 +142,38 @@ def chunk(words: list[dict]) -> list[list[dict]]:
     return [c for c in chunks if c]
 
 
+_FONT_CACHE: dict = {}
+def text_width(s: str, size: int) -> float:
+    """Approximate libass width of `s` at `size` (libass font size = ascent+descent, so PIL's em is rescaled).
+    Uses GBO_CAPTION_FONT_FILE (the same font libass uses); falls back to an average glyph width."""
+    try:
+        from PIL import ImageFont
+        if size not in _FONT_CACHE:
+            path = os.environ.get("GBO_CAPTION_FONT_FILE",
+                                  str(Path.home() / "Library/Fonts/Inter-VariableFont_opsz,wght.ttf"))
+            f = ImageFont.truetype(path, 100)
+            try:
+                f.set_variation_by_name("Bold")
+            except Exception:
+                pass
+            a, d = f.getmetrics()
+            _FONT_CACHE[size] = (f, size / (a + d))
+        f, k = _FONT_CACHE[size]
+        b = f.getbbox(s)
+        return (b[2] - b[0]) * k
+    except Exception:
+        return len(s) * size * 0.56
+
+
+def rrect(x: float, y: float, w: float, h: float, r: float) -> str:
+    """ASS vector drawing of a rounded rectangle."""
+    X, Y, R = x + w, y + h, r
+    p = lambda *v: " ".join(str(int(round(n))) for n in v)  # noqa: E731
+    return (f"m {p(x + R, y)} l {p(X - R, y)} b {p(X, y, X, y, X, y + R)} l {p(X, Y - R)} "
+            f"b {p(X, Y, X, Y, X - R, Y)} l {p(x + R, Y)} b {p(x, Y, x, Y, x, Y - R)} l {p(x, y + R)} "
+            f"b {p(x, y, x, y, x + R, y)}")
+
+
 def ass_time(t: float) -> str:
     cs = int(round(t * 100))
     h, cs = divmod(cs, 360000)
@@ -145,18 +194,18 @@ def build_ass(edl: dict, edit_dir: Path, seg_durs: list[float], out: Path) -> in
     for r, sdur in zip(edl["ranges"], seg_durs):
         tr = json.loads((edit_dir / "transcripts" / f"{r['source']}.json").read_text())
         lo, hi = r["caption_words"]
-        words = [dict(w) for w in tr["words"] if w["type"] == "word" and lo <= w["start"] <= hi]
+        words = [dict(w) for w in tr["words"] if w["type"] == "word" and w["text"].strip() and lo <= w["start"] <= hi]
         if words and prev_closed:  # previous range ended a sentence → this one opens one
             words[0]["text"] = words[0]["text"].strip()[:1].upper() + words[0]["text"].strip()[1:]
 
         def to_out(t: float) -> float:
-            return offset + min(max(t - r["start"], 0.0), sdur)
+            return offset + min(max((t - r["start"]) / r.get("speed", 1.0), 0.0), sdur)
 
         cks = chunk(words)
         for i, ck in enumerate(cks):
             a = to_out(ck[0]["start"])
             b = to_out(cks[i + 1][0]["start"]) if i + 1 < len(cks) else to_out(ck[-1]["end"] + 0.25)
-            b = max(b, a + 0.4)
+            b = min(max(b, a + 0.4), offset + sdur)   # never spill into the next range
             parts, hit, jw = [], False, []
             for w in ck:
                 txt = w["text"].strip()
@@ -175,12 +224,27 @@ def build_ass(edl: dict, edit_dir: Path, seg_durs: list[float], out: Path) -> in
             json_chunks.append({"start": round(a, 3), "end": round(b, 3), "words": jw})
             text = " ".join(parts).rstrip(",;:.")
             text = re.sub(r"[,;:.](\{\\c&H00FFFFFF&\})$", r"\1", text)
-            events.append(f"Dialogue: 0,{ass_time(a)},{ass_time(b)},Cap,,0,0,0,,{{\\fad(80,0)}}{text}")
+            if cs.get("rounded"):   # rounded box drawn as an ASS shape behind the text
+                size, y = cs.get("size", 72), cs.get("y", 1340)
+                bw = text_width(" ".join(w["text"] for w in jw), size) + 2 * 30
+                bh = size * 1.18 + 2 * 14
+                x0, y0 = 540 - bw / 2, y - bh / 2
+                events.append(f"Dialogue: 0,{ass_time(a)},{ass_time(b)},Box,,0,0,0,,"
+                              f"{{\\an7\\pos(0,0)\\fad(80,0)\\p1}}{rrect(x0, y0, bw, bh, 26)}{{\\p0}}")
+                events.append(f"Dialogue: 1,{ass_time(a)},{ass_time(b)},Cap,,0,0,0,,"
+                              f"{{\\an5\\pos(540,{y})\\fad(80,0)}}{text}")
+            else:
+                events.append(f"Dialogue: 0,{ass_time(a)},{ass_time(b)},Cap,,0,0,0,,{{\\fad(80,0)}}{text}")
         prev_closed = bool(words) and words[-1]["text"].rstrip()[-1:] in ".!?"
         offset += sdur
 
     out.with_suffix(".json").write_text(json.dumps(json_chunks, indent=1, ensure_ascii=False))
-    if cs.get("box"):   # BorderStyle 3 = opaque box; OutlineColour = box color, Outline = padding
+    if cs.get("rounded"):
+        style_line = (f"Style: Cap,{FONT},{cs.get('size', 72)},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,"
+                      "-1,0,0,0,100,100,0,0,1,0,0,5,60,60,0,1\n"
+                      "Style: Box,Arial,20,&H2A0E0C0C,&H2A0E0C0C,&H00000000,&H00000000,"
+                      "0,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1")
+    elif cs.get("box"):   # BorderStyle 3 = opaque box; OutlineColour = box color, Outline = padding
         style_line = (f"Style: Cap,{FONT},70,&H00FFFFFF,&H00FFFFFF,&H50101010,&H00000000,"
                       "-1,0,0,0,100,100,0,0,3,18,0,2,120,160,540,1")
     else:
@@ -230,7 +294,7 @@ def write_frameback_timeline(edl: dict, edit_dir: Path, seg_durs: list[float], o
         if tr_file.exists():
             tr = json.loads(tr_file.read_text())
             words = [w for w in tr["words"] if w.get("type") == "word" and r["start"] <= w["start"] < r["end"]]
-        to_out = lambda t: round(offset + min(max(t - r["start"], 0.0), sdur), 3)  # noqa: E731
+        to_out = lambda t: round(offset + min(max((t - r["start"]) / r.get("speed", 1.0), 0.0), sdur), 3)  # noqa: E731
         beat = r.get("beat", "")
         cuts.append({"id": f"range:{i}", "type": "range", "start": round(offset, 3), "end": round(offset + sdur, 3),
                      "label": f"{beat} · {r['source']} {r['start']:.2f}–{r['end']:.2f}".strip(" ·"),
@@ -298,8 +362,10 @@ def main() -> None:
     edl = json.loads(edl_path.read_text())
     global HFLIP
     HFLIP = bool(edl.get("hflip", False))
-    global GRADE
+    global GRADE, COLOR, FPS
     GRADE = edl.get("grade", "")
+    COLOR = edl.get("color_chain", "")
+    FPS = str(edl.get("fps", FPS))
     W, H = (540, 960) if args.preview else (1080, 1920)
     tag = "preview" if args.preview else "final"
     work = edit_dir / f"work_{tag}"
@@ -313,9 +379,24 @@ def main() -> None:
         print(f"  [{i:02d}] {r['beat']:<12} {r['source'][-4:]} {r['start']:6.2f}-{r['end']:6.2f}"
               f"{'  punch' if r.get('punch') else ''}", flush=True)
         extract_range(src, r["start"], r["end"], r.get("punch", []), edl.get("punch_scale", 1.08),
-                      W, H, p, args.preview, edl.get("voice_chain", ""))
+                      W, H, p, args.preview, edl.get("voice_chain", ""), r.get("mute", False), r.get("speed", 1.0))
         seg_paths.append(p)
         seg_durs.append(probe_duration(p))
+
+    # Anchors [range_index, source_time] → output seconds, so b-roll and cards survive re-cuts
+    starts = [sum(seg_durs[:k]) for k in range(len(seg_durs))]
+    def at(a):
+        i, t = a
+        return round(starts[i] + (t - edl["ranges"][i]["start"]) / edl["ranges"][i].get("speed", 1.0), 3)
+    for b in edl.get("broll", []):
+        if "at" in b:
+            b["start_in_output"] = at(b["at"])
+    for c in edl.get("cards", []):
+        c["start_in_output"] = at(c["from"]) if isinstance(c["from"], list) else c["from"]
+        c["end_in_output"] = (at(c["to"]) if isinstance(c["to"], list)
+                              else sum(seg_durs) if c["to"] == "end" else c["to"])
+    if edl.get("cards"):
+        out.with_suffix(".cards.json").write_text(json.dumps(edl["cards"], indent=1, ensure_ascii=False))
 
     base = work / "base.mp4"
     render.concat_segments(seg_paths, base, work)

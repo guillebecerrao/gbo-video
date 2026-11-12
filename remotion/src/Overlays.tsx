@@ -70,7 +70,7 @@ export const SplitPanel: React.FC<{ split: Split }> = ({ split }) => {
               opacity: q, transform: `translateY(${(1 - q) * 24}px) scale(${0.92 + 0.08 * q})`,
               display: "flex", flexDirection: cards ? "column" : "row",
               alignItems: "center", gap: cards ? 18 : 16,
-              width: cards ? 300 : undefined,
+              width: cards ? (split.cardWidth ?? 300) : undefined,
               padding: cards ? "44px 18px" : "24px 34px",
               borderRadius: 28, background: "#FFFFFF00",
               border: `2px solid ${active ? theme.azul : theme.line}`,

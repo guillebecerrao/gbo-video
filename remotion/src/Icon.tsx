@@ -23,6 +23,12 @@ export const Icon: React.FC<{ name: IconName; size?: number }> = ({ name, size =
       return (<svg {...common}><rect x="6" y="15" width="36" height="25" rx="4" /><path d="M18 15v-4a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v4M6 26h36" /></svg>);
     case "chart":
       return (<svg {...common}><path d="M8 40h34" /><rect x="11" y="26" width="6" height="12" rx="1.5" /><rect x="21" y="18" width="6" height="20" rx="1.5" /><rect x="31" y="10" width="6" height="28" rx="1.5" /></svg>);
+    case "box":
+      return (<svg {...common}><path d="M24 5l17 9v20l-17 9-17-9V14z" /><path d="M7 14l17 9 17-9M24 23v20" /></svg>);
+    case "play":
+      return (<svg {...common}><rect x="5" y="10" width="38" height="28" rx="5" /><path d="M20 18v12l10-6z" /></svg>);
+    case "user":
+      return (<svg {...common}><circle cx="24" cy="17" r="8" /><path d="M9 41c0-8.3 6.7-14 15-14s15 5.7 15 14" /></svg>);
     case "speech":
       return (<svg {...common}><path d="M8 10h32a3 3 0 0 1 3 3v17a3 3 0 0 1-3 3H22l-9 7v-7H8a3 3 0 0 1-3-3V13a3 3 0 0 1 3-3z" /><path d="M14 19h20M14 25h12" /></svg>);
   }

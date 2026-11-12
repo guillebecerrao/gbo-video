@@ -3,6 +3,7 @@ import { AbsoluteFill, OffthreadVideo, staticFile, useCurrentFrame, useVideoConf
 import { GboProps } from "./types";
 import { Captions } from "./Captions";
 import { LowerThird, SplitPanel, TitleCard, envelope } from "./Overlays";
+import { EndCard } from "./reel/GboReel";
 
 // Composes graphics + captions over a cut ALREADY made by video-use.
 // Split screen: the video slides into the top half (face kept), panel fills the bottom.
@@ -29,9 +30,12 @@ export const GboVertical: React.FC<GboProps> = (props) => {
       {props.lowerThird && <LowerThird {...props.lowerThird} />}
       {props.titleCard && <TitleCard {...props.titleCard} />}
       {/* captions LAST; ride the seam during split screens */}
-      {!(props.titleCard && t >= props.titleCard.from && t <= props.titleCard.to) && (
-        <Captions chunks={props.captions} yCenter={split ? 960 + 110 * k : 1380} />
+      {!(props.titleCard && t >= props.titleCard.from && t <= props.titleCard.to) &&
+        !(props.end && t >= props.end.from + 0.3) && (
+        <Captions chunks={props.captions} yCenter={split ? 960 + 110 * k : 1340}
+          variant={props.captionStyle ?? "paper"} />
       )}
+      {props.end && <EndCard e={props.end} />}
     </AbsoluteFill>
   );
 };

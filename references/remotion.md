@@ -44,17 +44,25 @@ remotion.dev antes de usarlo comercialmente.
 - Captions con énfasis animado, títulos, lower thirds, gráficos → Remotion.
 
 ## Thumbnail de YouTube y portada de reel
-- Componentes: `GboThumb` (still 1280×720, long form) y `GboCover` (portada vertical del reel).
+- Componentes: `GboThumb` (still 1280×720, long form) y `GboCover` (portada vertical del reel), con
+  cuatro `layout`: `duo` (dos retratos en caja), `single` (un retrato a todo el ancho), `frame`
+  (un frame del propio video a sangre completa, a menudo mejor que una portada diseñada) y `split`
+  (dos frames 50/50 con corte vertical). Los ids `GboCoverSolo` y `GboCoverSplit` son alias de `frame` y `split`.
   Render: `npx remotion still GboThumb edit/thumbnail/thumbnail_youtube_v1.png --props=<json> --public-dir=edit`
   (las rutas de imagen en los props son relativas a `edit/`).
 - Diseño de la plantilla: fondo oscuro, texto ≤ 5 palabras a la izquierda con acento, retratos a
   la derecha, monograma. La esquina inferior derecha queda libre (la tapa la duración de YouTube).
 - El texto del thumbnail complementa el título, no lo repite. Verificar legibilidad a 320 px de ancho.
 - **Elección de caras: buscar intriga, no solo "verse bien".**
-  - Descartar primero lo que no favorece: mueca, boca a medio decir una palabra, ojos cerrados, labios fruncidos.
+  - Descartar primero lo que no favorece: mueca, boca a medio decir una palabra, ojos cerrados o
+    pesados, labios fruncidos, media carcajada con párpados caídos.
+  - Ojos bien abiertos y expresión con intención (ceja levantada, gesto) por sobre una sonrisa forzada.
   - Entre los que quedan, priorizar la emoción que genera curiosidad: cara pensativa, planteando
     una idea con fuerza mientras gesticula, intriga, escepticismo, sorpresa. La sonrisa amable
     es el último recurso.
   - Buscar en los momentos de mayor tensión del guion (desacuerdos, preguntas difíciles),
     no muestrear parejo todo el video. Manos gesticulando dentro del cuadro suman energía.
   - Proponer al menos una variante con emoción fuerte junto a la segura, explicando qué emoción busca cada una.
+  - Sugerir en el checklist de grabación 3–4 s de "foto" al final de cada sesión (mirando a cámara,
+    un par de expresiones): da material de portada sin depender del habla.
+- El texto de la portada invita a ver el video; no revela la oferta, el dato ni el remate.

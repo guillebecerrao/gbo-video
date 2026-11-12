@@ -205,7 +205,7 @@ const Globe: React.FC<{ color: string }> = ({ color }) => (
   </svg>
 );
 
-const EndCard: React.FC<{ e: ReelProps["end"] }> = ({ e }) => {
+export const EndCard: React.FC<{ e: ReelProps["end"] }> = ({ e }) => {
   const { t } = useTime();
   const sp = useSpringAt();
   if (t < e.from) return null;
